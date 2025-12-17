@@ -73,7 +73,14 @@ function toNumber(v: unknown) {
 }
 
 function moneyRu(value: number) {
-  return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value);
+  // Используем сом (KGS). Если окружение не поддерживает символ, можно показать префикс "C.".
+  try {
+    return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "KGS", maximumFractionDigits: 0 }).format(
+      value,
+    );
+  } catch {
+    return `C. ${Math.round(value).toLocaleString("ru-RU")}`;
+  }
 }
 
 function dateTimeRu(iso: string) {
