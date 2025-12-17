@@ -87,6 +87,7 @@ export function ServicesManager() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState<string>("");
 
   const servicesQuery = useQuery({
     queryKey: ["business", "services"],
@@ -95,6 +96,16 @@ export function ServicesManager() {
   });
 
   const services = servicesQuery.data ?? [];
+  const filteredServices = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return services;
+    return services.filter((s) => {
+      const name = (s.name ?? "").toLowerCase();
+      return name.includes(term);
+    });
+  }, [search, services]);
+  const noData = services.length === 0;
+  const noMatch = !noData && filteredServices.length === 0;
 
   const form = useForm<ServiceFormValues, unknown, ServiceValues>({
     resolver: zodResolver(serviceSchema),
@@ -153,17 +164,26 @@ export function ServicesManager() {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Услуги</h1>
           <p className="text-sm text-muted-foreground">
             Каталог услуг центра: длительность, цена и цвет для календаря.
           </p>
         </div>
-        <Button type="button" className="h-11" onClick={openCreate} disabled={!supabase}>
-          <Plus className="size-4" />
-          Добавить
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-[360px]">
+          <Input
+            placeholder="Поиск по названию услуги"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button type="button" className="h-11" onClick={openCreate} disabled={!supabase}>
+              <Plus className="size-4" />
+              Добавить
+            </Button>
+          </div>
+        </div>
       </div>
 
       {!supabase ? (
@@ -178,15 +198,17 @@ export function ServicesManager() {
           <div className="text-sm font-semibold">Список</div>
           <Separator />
 
-          {services.length === 0 ? (
-            <div className="text-sm text-muted-foreground">
-              {servicesQuery.isLoading ? "Загрузка…" : "Пока нет услуг"}
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-2 md:hidden">
-                {services.map((s) => (
-                  <div key={s.id} className="rounded-xl border bg-card p-3">
+           {noData ? (
+             <div className="text-sm text-muted-foreground">
+               {servicesQuery.isLoading ? "Загрузка…" : "Пока нет услуг"}
+             </div>
+           ) : noMatch ? (
+             <div className="text-sm text-muted-foreground">Ничего не найдено</div>
+           ) : (
+             <>
+               <div className="grid gap-2 md:hidden">
+                 {filteredServices.map((s) => (
+                   <div key={s.id} className="rounded-xl border bg-card p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -231,10 +253,23 @@ export function ServicesManager() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {services.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-medium">{s.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{s.duration_min} мин</TableCell>
+                    {noData ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-muted-foreground">
+                          {servicesQuery.isLoading ? "Загрузка…" : "Пока нет услуг"}
+                        </TableCell>
+                      </TableRow>
+                    ) : noMatch ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-muted-foreground">
+                          Ничего не найдено
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredServices.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell className="font-medium">{s.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{s.duration_min} мин</TableCell>
                         <TableCell className="text-muted-foreground">{moneyRu(s.price)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -264,7 +299,8 @@ export function ServicesManager() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

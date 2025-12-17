@@ -4,7 +4,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Baby, CreditCard, Save } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -77,6 +77,7 @@ async function fetchChildren(): Promise<ChildRow[]> {
 export function AdminChildren() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState<string>("");
 
   const parentsQuery = useQuery({
     queryKey: ["admin", "parents"],
@@ -141,14 +142,41 @@ export function AdminChildren() {
 
   const parents = parentsQuery.data ?? [];
   const children = childrenQuery.data ?? [];
+  const filteredChildren = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return children;
+    return children.filter((c) => {
+      const name = (c.name ?? "").toLowerCase();
+      const diagnosis = (c.diagnosis ?? "").toLowerCase();
+      const parentName = (c.parent?.full_name ?? "").toLowerCase();
+      const parentEmail = (c.parent?.email ?? "").toLowerCase();
+      return (
+        name.includes(term) ||
+        diagnosis.includes(term) ||
+        parentName.includes(term) ||
+        parentEmail.includes(term)
+      );
+    });
+  }, [children, search]);
+  const noData = children.length === 0;
+  const noMatch = !noData && filteredChildren.length === 0;
 
   return (
     <div className="grid gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Дети</h1>
-        <p className="text-sm text-muted-foreground">
-          Добавление ребёнка и привязка к родителю.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Дети</h1>
+          <p className="text-sm text-muted-foreground">
+            Добавление ребёнка и привязка к родителю.
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-[360px]">
+          <Input
+            placeholder="Поиск по имени, диагнозу или родителю"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {!supabase ? (
@@ -279,12 +307,14 @@ export function AdminChildren() {
           <div className="text-sm font-semibold">Список</div>
 
           <div className="grid gap-2 md:hidden">
-            {children.length === 0 ? (
+            {noData ? (
               <div className="text-sm text-muted-foreground">
                 {childrenQuery.isLoading ? "Загрузка…" : "Нет данных"}
               </div>
+            ) : noMatch ? (
+              <div className="text-sm text-muted-foreground">Ничего не найдено</div>
             ) : (
-              children.map((c) => (
+              filteredChildren.map((c) => (
                 <div key={c.id} className="rounded-xl border bg-card p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -341,16 +371,22 @@ export function AdminChildren() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {children.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-muted-foreground">
-                      {childrenQuery.isLoading ? "Загрузка…" : "Нет данных"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  children.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
+                 {noData ? (
+                   <TableRow>
+                     <TableCell colSpan={3} className="text-muted-foreground">
+                       {childrenQuery.isLoading ? "Загрузка…" : "Нет данных"}
+                     </TableCell>
+                   </TableRow>
+                 ) : noMatch ? (
+                   <TableRow>
+                     <TableCell colSpan={3} className="text-muted-foreground">
+                       Ничего не найдено
+                     </TableCell>
+                   </TableRow>
+                 ) : (
+                   filteredChildren.map((c) => (
+                     <TableRow key={c.id}>
+                       <TableCell className="font-medium">{c.name}</TableCell>
                       <TableCell className="text-muted-foreground">{c.diagnosis ?? "—"}</TableCell>
                       <TableCell>
                         <Select

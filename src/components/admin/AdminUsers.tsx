@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserPlus, Users } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -79,6 +79,7 @@ async function fetchProfiles(): Promise<Profile[]> {
 export function AdminUsers() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState<string>("");
 
   const profilesQuery = useQuery({
     queryKey: ["admin", "profiles"],
@@ -138,15 +139,34 @@ export function AdminUsers() {
   });
 
   const profiles = profilesQuery.data ?? [];
+  const filteredProfiles = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return profiles;
+    return profiles.filter((p) => {
+      const name = (p.full_name ?? "").toLowerCase();
+      const email = (p.email ?? "").toLowerCase();
+      const role = (p.role ?? "").toLowerCase();
+      return name.includes(term) || email.includes(term) || role.includes(term);
+    });
+  }, [profiles, search]);
+  const noData = profiles.length === 0;
+  const noMatch = !noData && filteredProfiles.length === 0;
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Пользователи</h1>
           <p className="text-sm text-muted-foreground">
             Приглашение сотрудников и родителей, управление ролями.
           </p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-[360px]">
+          <Input
+            placeholder="Поиск по имени, email или роли"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
@@ -269,12 +289,14 @@ export function AdminUsers() {
           </div>
 
           <div className="grid gap-2 md:hidden">
-            {profiles.length === 0 ? (
+            {noData ? (
               <div className="text-sm text-muted-foreground">
                 {profilesQuery.isLoading ? "Загрузка…" : "Нет данных"}
               </div>
+            ) : noMatch ? (
+              <div className="text-sm text-muted-foreground">Ничего не найдено</div>
             ) : (
-              profiles.map((p) => (
+              filteredProfiles.map((p) => (
                 <div key={p.id} className="rounded-xl border bg-card p-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">{p.full_name || "—"}</div>
@@ -314,14 +336,20 @@ export function AdminUsers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.length === 0 ? (
+                {noData ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-muted-foreground">
                       {profilesQuery.isLoading ? "Загрузка…" : "Нет данных"}
                     </TableCell>
                   </TableRow>
+                ) : noMatch ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-muted-foreground">
+                      Ничего не найдено
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  profiles.map((p) => (
+                  filteredProfiles.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.full_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{p.email}</TableCell>

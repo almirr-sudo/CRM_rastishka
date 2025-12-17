@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, UsersRound } from "lucide-react";
 
@@ -61,6 +61,18 @@ function buildDefaultDraft(): Record<number, DayDraft> {
   return out;
 }
 
+function buildDraftFromRows(rows: SpecialistWorkingHours[]) {
+  const next = buildDefaultDraft();
+  rows.forEach((row) => {
+    next[row.weekday] = {
+      enabled: true,
+      start: hhmm(row.start_time),
+      end: hhmm(row.end_time),
+    };
+  });
+  return next;
+}
+
 async function fetchTherapists(): Promise<TherapistLite[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
@@ -82,54 +94,22 @@ async function fetchHours(specialistId: string): Promise<SpecialistWorkingHours[
   return (data ?? []) as SpecialistWorkingHours[];
 }
 
-export function SpecialistScheduleManager() {
+function SpecialistHoursEditor({
+  specialistId,
+  initialRows,
+}: {
+  specialistId: string;
+  initialRows: SpecialistWorkingHours[];
+}) {
   const queryClient = useQueryClient();
-  const lastLoadedSpecialistIdRef = useRef<string>("");
-
-  const therapistsQuery = useQuery({
-    queryKey: ["business", "therapists"],
-    queryFn: fetchTherapists,
-    enabled: Boolean(supabase),
-  });
-
-  const therapists = therapistsQuery.data ?? [];
-
-  const [selectedId, setSelectedId] = useState<string>("");
-  const effectiveId = useMemo(() => selectedId || therapists[0]?.id || "", [selectedId, therapists]);
-
-  const hoursQuery = useQuery({
-    queryKey: ["business", "specialistHours", effectiveId],
-    queryFn: () => fetchHours(effectiveId),
-    enabled: Boolean(supabase) && Boolean(effectiveId),
-    refetchOnWindowFocus: false,
-    onSuccess: (rows) => {
-      if (!effectiveId) return;
-      if (lastLoadedSpecialistIdRef.current === effectiveId) return;
-
-      const next = buildDefaultDraft();
-      rows.forEach((row) => {
-        next[row.weekday] = {
-          enabled: true,
-          start: hhmm(row.start_time),
-          end: hhmm(row.end_time),
-        };
-      });
-
-      setDraft(next);
-      setErrorText(null);
-      setSavedHint(null);
-      lastLoadedSpecialistIdRef.current = effectiveId;
-    },
-  });
-
-  const [draft, setDraft] = useState<Record<number, DayDraft>>(() => buildDefaultDraft());
+  const [draft, setDraft] = useState<Record<number, DayDraft>>(() => buildDraftFromRows(initialRows));
   const [errorText, setErrorText] = useState<string | null>(null);
   const [savedHint, setSavedHint] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!supabase) throw new Error("Supabase не настроен");
-      if (!effectiveId) throw new Error("Выберите специалиста");
+      if (!specialistId) throw new Error("Выберите специалиста");
 
       setErrorText(null);
       setSavedHint(null);
@@ -148,7 +128,7 @@ export function SpecialistScheduleManager() {
 
       if (enabled.length > 0) {
         const rows = enabled.map((d) => ({
-          specialist_id: effectiveId,
+          specialist_id: specialistId,
           weekday: d.value,
           start_time: toDbTime(draft[d.value]!.start),
           end_time: toDbTime(draft[d.value]!.end),
@@ -163,19 +143,118 @@ export function SpecialistScheduleManager() {
         const { error: deleteError } = await supabase
           .from("specialist_working_hours")
           .delete()
-          .eq("specialist_id", effectiveId)
+          .eq("specialist_id", specialistId)
           .in("weekday", disabled.map((d) => d.value));
         if (deleteError) throw deleteError;
       }
     },
     onSuccess: async () => {
       setSavedHint("Сохранено");
-      await queryClient.invalidateQueries({ queryKey: ["business", "specialistHours", effectiveId] });
+      await queryClient.invalidateQueries({ queryKey: ["business", "specialistHours", specialistId] });
       window.setTimeout(() => setSavedHint(null), 2000);
     },
     onError: (err: unknown) => {
       setErrorText(err instanceof Error ? err.message : "Не удалось сохранить расписание");
     },
+  });
+
+  return (
+    <>
+      <div className="grid gap-2">
+        {WEEKDAYS.map((d) => {
+          const row = draft[d.value];
+          const enabled = row?.enabled ?? false;
+          return (
+            <div
+              key={d.value}
+              className="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={enabled}
+                  onCheckedChange={(v) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      [d.value]: {
+                        ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }),
+                        enabled: Boolean(v),
+                      },
+                    }))
+                  }
+                />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">{d.full}</div>
+                  <div className="text-xs text-muted-foreground">{enabled ? "Работает" : "Выходной"}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:w-[320px]">
+                <Input
+                  type="time"
+                  className="h-11"
+                  value={row?.start ?? "09:00"}
+                  disabled={!enabled}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      [d.value]: {
+                        ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }),
+                        start: e.target.value,
+                      },
+                    }))
+                  }
+                />
+                <Input
+                  type="time"
+                  className="h-11"
+                  value={row?.end ?? "18:00"}
+                  disabled={!enabled}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      [d.value]: {
+                        ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }),
+                        end: e.target.value,
+                      },
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {errorText ? <div className="rounded-lg border bg-card p-3 text-sm text-destructive">{errorText}</div> : null}
+
+      <div className="flex items-center justify-end gap-2">
+        {savedHint ? <div className="text-sm text-muted-foreground">{savedHint}</div> : null}
+        <Button type="button" className="h-11" disabled={!supabase || !specialistId || saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+          <Save className="size-4" />
+          Сохранить
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export function SpecialistScheduleManager() {
+  const therapistsQuery = useQuery({
+    queryKey: ["business", "therapists"],
+    queryFn: fetchTherapists,
+    enabled: Boolean(supabase),
+  });
+
+  const therapists = therapistsQuery.data ?? [];
+
+  const [selectedId, setSelectedId] = useState<string>("");
+  const effectiveId = useMemo(() => selectedId || therapists[0]?.id || "", [selectedId, therapists]);
+
+  const hoursQuery = useQuery({
+    queryKey: ["business", "specialistHours", effectiveId],
+    queryFn: () => fetchHours(effectiveId),
+    enabled: Boolean(supabase) && Boolean(effectiveId),
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -201,17 +280,7 @@ export function SpecialistScheduleManager() {
               <UsersRound className="size-4 text-muted-foreground" />
               Специалист
             </div>
-            <Select
-              value={effectiveId}
-              onValueChange={(v) => {
-                setSelectedId(v);
-                setDraft(buildDefaultDraft());
-                setErrorText(null);
-                setSavedHint(null);
-                lastLoadedSpecialistIdRef.current = "";
-              }}
-              disabled={!supabase || therapists.length <= 1}
-            >
+            <Select value={effectiveId} onValueChange={setSelectedId} disabled={!supabase || therapists.length <= 1}>
               <SelectTrigger className="h-11">
                 <SelectValue placeholder={therapistsQuery.isLoading ? "Загрузка…" : "Выберите специалиста"} />
               </SelectTrigger>
@@ -231,82 +300,11 @@ export function SpecialistScheduleManager() {
             <div className="text-sm text-muted-foreground">Нет специалистов.</div>
           ) : hoursQuery.isLoading ? (
             <div className="text-sm text-muted-foreground">Загрузка расписания…</div>
+          ) : hoursQuery.isError ? (
+            <div className="text-sm text-destructive">Не удалось загрузить расписание.</div>
           ) : (
-            <div className="grid gap-2">
-              {WEEKDAYS.map((d) => {
-                const row = draft[d.value];
-                const enabled = row?.enabled ?? false;
-                return (
-                  <div
-                    key={d.value}
-                    className="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={enabled}
-                        onCheckedChange={(v) =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            [d.value]: { ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }), enabled: Boolean(v) },
-                          }))
-                        }
-                      />
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold">{d.full}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {enabled ? "Работает" : "Выходной"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 sm:w-[320px]">
-                      <Input
-                        type="time"
-                        className="h-11"
-                        value={row?.start ?? "09:00"}
-                        disabled={!enabled}
-                        onChange={(e) =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            [d.value]: { ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }), start: e.target.value },
-                          }))
-                        }
-                      />
-                      <Input
-                        type="time"
-                        className="h-11"
-                        value={row?.end ?? "18:00"}
-                        disabled={!enabled}
-                        onChange={(e) =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            [d.value]: { ...(prev[d.value] ?? { enabled: false, start: "09:00", end: "18:00" }), end: e.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <SpecialistHoursEditor key={effectiveId} specialistId={effectiveId} initialRows={hoursQuery.data ?? []} />
           )}
-
-          {errorText ? (
-            <div className="rounded-lg border bg-card p-3 text-sm text-destructive">{errorText}</div>
-          ) : null}
-
-          <div className="flex items-center justify-end gap-2">
-            {savedHint ? <div className="text-sm text-muted-foreground">{savedHint}</div> : null}
-            <Button
-              type="button"
-              className="h-11"
-              disabled={!supabase || !effectiveId || saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              <Save className="size-4" />
-              Сохранить
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

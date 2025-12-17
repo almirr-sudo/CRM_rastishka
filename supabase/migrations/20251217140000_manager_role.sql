@@ -1,19 +1,6 @@
 -- =========================
--- Новая роль: manager (доступ к бизнес-модулю)
+-- Шаг 2: функции и политики для роли manager (значение уже добавлено)
 -- =========================
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_type t
-    join pg_enum e on e.enumtypid = t.oid
-    where t.typname = 'user_role'
-      and e.enumlabel = 'manager'
-  ) then
-    alter type public.user_role add value 'manager';
-  end if;
-end $$;
 
 create or replace function public.is_manager()
 returns boolean
@@ -88,4 +75,3 @@ on public.profiles
 for select
 to authenticated
 using (public.is_admin_or_manager());
-
