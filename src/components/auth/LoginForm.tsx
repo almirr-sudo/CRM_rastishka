@@ -176,6 +176,7 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Администратор</SelectItem>
+                <SelectItem value="manager">Менеджер</SelectItem>
                 <SelectItem value="therapist">Терапевт / педагог</SelectItem>
                 <SelectItem value="parent">Родитель</SelectItem>
               </SelectContent>

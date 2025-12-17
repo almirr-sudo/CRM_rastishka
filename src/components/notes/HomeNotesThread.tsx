@@ -41,6 +41,8 @@ function roleLabel(role: UserRole) {
   switch (role) {
     case "admin":
       return "Администратор";
+    case "manager":
+      return "Менеджер";
     case "therapist":
       return "Терапевт";
     case "parent":

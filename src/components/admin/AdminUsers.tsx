@@ -40,7 +40,7 @@ import type { Profile, UserRole } from "@/types/models";
 const inviteSchema = z.object({
   email: z.string().email("Введите корректный email"),
   full_name: z.string().min(1, "Введите имя").max(120),
-  role: z.enum(["admin", "therapist", "parent"]),
+  role: z.enum(["admin", "manager", "therapist", "parent"]),
   temp_password: z
     .string()
     .min(6, "Минимум 6 символов")
@@ -55,6 +55,8 @@ function roleLabel(role: UserRole) {
   switch (role) {
     case "admin":
       return "Администратор";
+    case "manager":
+      return "Менеджер";
     case "therapist":
       return "Терапевт";
     case "parent":
@@ -216,6 +218,7 @@ export function AdminUsers() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="admin">Администратор</SelectItem>
+                        <SelectItem value="manager">Менеджер</SelectItem>
                         <SelectItem value="therapist">Терапевт</SelectItem>
                         <SelectItem value="parent">Родитель</SelectItem>
                       </SelectContent>
@@ -265,7 +268,43 @@ export function AdminUsers() {
             Список пользователей
           </div>
 
-          <div className="rounded-lg border bg-card">
+          <div className="grid gap-2 md:hidden">
+            {profiles.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                {profilesQuery.isLoading ? "Загрузка…" : "Нет данных"}
+              </div>
+            ) : (
+              profiles.map((p) => (
+                <div key={p.id} className="rounded-xl border bg-card p-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{p.full_name || "—"}</div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.email}</div>
+                  </div>
+
+                  <div className="mt-3 grid gap-2">
+                    <div className="text-xs font-medium text-muted-foreground">Роль</div>
+                    <Select
+                      value={p.role}
+                      onValueChange={(v) => updateRoleMutation.mutate({ id: p.id, role: v as UserRole })}
+                      disabled={!supabase || updateRoleMutation.isPending}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">{roleLabel("admin")}</SelectItem>
+                        <SelectItem value="manager">{roleLabel("manager")}</SelectItem>
+                        <SelectItem value="therapist">{roleLabel("therapist")}</SelectItem>
+                        <SelectItem value="parent">{roleLabel("parent")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -289,9 +328,7 @@ export function AdminUsers() {
                       <TableCell>
                         <Select
                           value={p.role}
-                          onValueChange={(v) =>
-                            updateRoleMutation.mutate({ id: p.id, role: v as UserRole })
-                          }
+                          onValueChange={(v) => updateRoleMutation.mutate({ id: p.id, role: v as UserRole })}
                           disabled={!supabase || updateRoleMutation.isPending}
                         >
                           <SelectTrigger className="h-9">
@@ -299,6 +336,7 @@ export function AdminUsers() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="admin">{roleLabel("admin")}</SelectItem>
+                            <SelectItem value="manager">{roleLabel("manager")}</SelectItem>
                             <SelectItem value="therapist">{roleLabel("therapist")}</SelectItem>
                             <SelectItem value="parent">{roleLabel("parent")}</SelectItem>
                           </SelectContent>

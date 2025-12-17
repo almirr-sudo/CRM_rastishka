@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/public-env";
 const inviteSchema = z.object({
   email: z.string().email(),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["admin", "therapist", "parent"]),
+  role: z.enum(["admin", "manager", "therapist", "parent"]),
   temp_password: z.string().min(6).max(72).optional(),
 });
 
@@ -106,4 +106,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true, userId: createdUserId });
 }
-

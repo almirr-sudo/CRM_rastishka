@@ -287,7 +287,7 @@ export function QuickLogDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="mx-auto w-full max-w-2xl">
+      <DrawerContent className="mx-auto w-full max-w-2xl data-[vaul-drawer-direction=bottom]:max-h-[92vh]">
         <DrawerHeader className="pb-2">
           <DrawerTitle className="text-lg">
             {child ? `Быстрый лог: ${child.name}` : "Быстрый лог"}
@@ -297,7 +297,7 @@ export function QuickLogDrawer({
           ) : null}
         </DrawerHeader>
 
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           {demoMode ? (
             <div className="mb-3 rounded-lg border bg-card p-3 text-sm text-muted-foreground">
               Демо-режим — данные не синхронизируются с Supabase.

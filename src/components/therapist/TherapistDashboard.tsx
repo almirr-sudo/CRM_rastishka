@@ -141,79 +141,71 @@ export function TherapistDashboard() {
   const children = childrenQuery.data ?? [];
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 flex-col">
-            <div className="flex items-center gap-2">
-              <UsersRound className="size-5 text-muted-foreground" />
-              <h1 className="truncate text-lg font-semibold leading-tight">
-                Быстрый ввод
-              </h1>
-            </div>
-            <div className="mt-0.5 flex items-center gap-2 text-sm text-muted-foreground">
-              <CalendarDays className="size-4" />
-              <span className="capitalize">{todayLabel}</span>
-            </div>
+    <div className="grid gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <UsersRound className="size-5 text-muted-foreground" />
+            <h1 className="truncate text-lg font-semibold leading-tight">Быстрый ввод</h1>
           </div>
-
-          {!isSupabaseConfigured ? (
-            <div className="text-right text-xs text-muted-foreground">
-              Демо-режим
-              <div className="hidden sm:block">
-                Настройте `NEXT_PUBLIC_SUPABASE_URL` и `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-              </div>
-            </div>
-          ) : showDemoLabel ? (
-            <div className="text-right text-xs text-muted-foreground">
-              Демо-режим
-              <div className="hidden sm:block">
-                Войдите в Supabase Auth, чтобы включить синхронизацию
-              </div>
-            </div>
-          ) : null}
+          <div className="mt-0.5 flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarDays className="size-4" />
+            <span className="capitalize">{todayLabel}</span>
+          </div>
         </div>
-      </header>
 
-      <main className="mx-auto max-w-6xl p-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {children.map((child) => (
-            <button
-              key={child.id}
-              type="button"
-              className={cn(
-                "group text-left outline-none",
-                "focus-visible:ring-ring focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg",
-              )}
-              onClick={() => {
-                setSelectedChild(child);
-                setDrawerOpen(true);
-              }}
-            >
-              <Card className="transition-shadow group-hover:shadow-sm">
-                <CardContent className="flex items-center gap-3 p-3">
-                  <Avatar className="size-12">
-                    <AvatarImage src={child.avatar_url ?? undefined} alt="" />
-                    <AvatarFallback className="text-sm font-semibold">
-                      {getInitials(child.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <div className="truncate text-base font-medium">
-                      {child.name}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {child.dietary_restrictions
-                        ? `Питание: ${child.dietary_restrictions}`
-                        : "Нет ограничений по питанию"}
-                    </div>
+        {!isSupabaseConfigured ? (
+          <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">
+            Демо‑режим. Настройте `NEXT_PUBLIC_SUPABASE_URL` и `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+          </div>
+        ) : showDemoLabel ? (
+          <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">
+            Демо‑режим. Войдите в Supabase Auth, чтобы включить синхронизацию.
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {children.map((child) => (
+          <button
+            key={child.id}
+            type="button"
+            className={cn(
+              "group text-left outline-none",
+              "focus-visible:ring-ring focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg",
+            )}
+            onClick={() => {
+              setSelectedChild(child);
+              setDrawerOpen(true);
+            }}
+          >
+            <Card className="h-full transition-shadow group-hover:shadow-sm">
+              <CardContent className="flex flex-col items-center gap-2 p-4 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-3 sm:text-left">
+                <Avatar className="size-14 sm:size-12">
+                  <AvatarImage src={child.avatar_url ?? undefined} alt="" />
+                  <AvatarFallback className="text-sm font-semibold">
+                    {getInitials(child.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 w-full">
+                  <div className="truncate text-base font-semibold leading-tight">
+                    {child.name}
                   </div>
-                </CardContent>
-              </Card>
-            </button>
-          ))}
-        </div>
-      </main>
+                  {child.dietary_restrictions ? (
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      Питание: {child.dietary_restrictions}
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 hidden truncate text-xs text-muted-foreground sm:block">
+                      Нет ограничений по питанию
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+        ))}
+      </div>
 
       <QuickLogDrawer
         key={selectedChild?.id ?? "no-child"}

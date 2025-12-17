@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "therapist" | "parent";
+export type UserRole = "admin" | "manager" | "therapist" | "parent";
 
 export type FoodIntake = "all" | "half" | "none" | "refusal";
 
@@ -13,6 +13,15 @@ export type TimelineEventType =
   | "nap_end"
   | "note"
   | "custom";
+
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "canceled"
+  | "completed"
+  | "no_show";
+
+export type TransactionType = "charge" | "payment";
 
 export type Json =
   | string
@@ -113,4 +122,52 @@ export interface HomeNote {
   message: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  duration_min: number;
+  price: number;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpecialistWorkingHours {
+  id: string;
+  specialist_id: string;
+  weekday: number; // 0..6 (вс..сб)
+  start_time: string; // HH:MM:SS
+  end_time: string; // HH:MM:SS
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Appointment {
+  id: string;
+  child_id: string;
+  specialist_id: string;
+  service_id: string;
+  start_time: string;
+  end_time: string;
+  status: AppointmentStatus;
+  notes: string | null;
+  is_recurring: boolean;
+  recurrence_group_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  child_id: string;
+  appointment_id: string | null;
+  amount: number;
+  type: TransactionType;
+  date: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
 }

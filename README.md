@@ -36,6 +36,8 @@
 - `supabase/migrations/20251217123000_timeline_events.sql`
 - `supabase/migrations/20251217130000_home_notes.sql`
 - `supabase/migrations/20251217130500_profiles_related_select.sql`
+- `supabase/migrations/20251217140000_manager_role.sql`
+- `supabase/migrations/20251217141000_business_module.sql`
 
 **Вариант A (проще):** Supabase Dashboard → **SQL Editor** → выполните миграции по порядку.
 
@@ -43,6 +45,8 @@
 
 ### 3) Первый администратор
 По умолчанию у новых пользователей роль `parent`. Чтобы создать первого `admin`, после регистрации выполните в SQL Editor:
+
+Если получаете ошибку `relation \"public.profiles\" does not exist` — сначала примените миграции из раздела выше.
 ```sql
 update public.profiles
 set role = 'admin'
@@ -50,7 +54,8 @@ where email = 'ВАШ_EMAIL';
 ```
 
 ## Роли и разделы (MVP)
-- `admin`: управление пользователями, детьми и назначениями
+- `admin`: админ‑панель + бизнес‑модуль (календарь/услуги/расписания/финансы)
+- `manager`: бизнес‑модуль (календарь/услуги/расписания/финансы)
 - `therapist`: быстрый ввод событий (еда/настроение/сон), инциденты ABC, цели/трекинг
 - `parent`: просмотр таймлайна и графиков, домашние заметки
 

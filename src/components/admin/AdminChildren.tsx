@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Baby, Save } from "lucide-react";
+import { Baby, CreditCard, Save } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -276,7 +277,61 @@ export function AdminChildren() {
       <Card>
         <CardContent className="grid gap-3 p-4">
           <div className="text-sm font-semibold">Список</div>
-          <div className="rounded-lg border bg-card">
+
+          <div className="grid gap-2 md:hidden">
+            {children.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                {childrenQuery.isLoading ? "Загрузка…" : "Нет данных"}
+              </div>
+            ) : (
+              children.map((c) => (
+                <div key={c.id} className="rounded-xl border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">{c.name}</div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {c.diagnosis ?? "—"}
+                      </div>
+                    </div>
+                    <Button asChild variant="secondary" className="h-11 shrink-0">
+                      <Link href={`/app/business/finance?child=${c.id}`}>
+                        <CreditCard className="size-4" />
+                        Финансы
+                      </Link>
+                    </Button>
+                  </div>
+
+                  <div className="mt-3 grid gap-2">
+                    <div className="text-xs font-medium text-muted-foreground">Родитель</div>
+                    <Select
+                      value={c.parent_id ?? NO_PARENT_VALUE}
+                      onValueChange={(v) =>
+                        updateParentMutation.mutate({
+                          childId: c.id,
+                          parentId: v === NO_PARENT_VALUE ? null : v,
+                        })
+                      }
+                      disabled={!supabase || updateParentMutation.isPending}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Не выбран" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_PARENT_VALUE}>Не выбран</SelectItem>
+                        {parents.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {(p.full_name || "Без имени") + " · " + p.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -296,9 +351,7 @@ export function AdminChildren() {
                   children.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {c.diagnosis ?? "—"}
-                      </TableCell>
+                      <TableCell className="text-muted-foreground">{c.diagnosis ?? "—"}</TableCell>
                       <TableCell>
                         <Select
                           value={c.parent_id ?? NO_PARENT_VALUE}

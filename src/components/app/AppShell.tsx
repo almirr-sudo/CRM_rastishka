@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Shield, Stethoscope, Users } from "lucide-react";
+import { Briefcase, LogOut, Menu, Shield, Stethoscope, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +57,8 @@ function roleLabel(role: UserRole) {
   switch (role) {
     case "admin":
       return "Администратор";
+    case "manager":
+      return "Менеджер";
     case "therapist":
       return "Терапевт / педагог";
     case "parent":
@@ -67,13 +69,25 @@ function roleLabel(role: UserRole) {
 }
 
 function buildNav(role: UserRole): NavItem[] {
+  const businessNav: NavItem[] = [
+    { href: "/app/business/calendar", label: "Календарь" },
+    { href: "/app/business/services", label: "Услуги" },
+    { href: "/app/business/specialists", label: "Расписание специалистов" },
+    { href: "/app/business/finance", label: "Финансы" },
+  ];
+
   if (role === "admin") {
     return [
       { href: "/app/admin", label: "Панель администратора" },
       { href: "/app/admin/users", label: "Пользователи" },
       { href: "/app/admin/children", label: "Дети" },
       { href: "/app/admin/assignments", label: "Назначения" },
+      ...businessNav,
     ];
+  }
+
+  if (role === "manager") {
+    return businessNav;
   }
 
   if (role === "parent") {
@@ -91,6 +105,7 @@ function buildNav(role: UserRole): NavItem[] {
 
 function roleIcon(role: UserRole) {
   if (role === "admin") return <Shield className="size-4 text-muted-foreground" />;
+  if (role === "manager") return <Briefcase className="size-4 text-muted-foreground" />;
   if (role === "parent") return <Users className="size-4 text-muted-foreground" />;
   return <Stethoscope className="size-4 text-muted-foreground" />;
 }
@@ -125,7 +140,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-20 border-b bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
             <Button
@@ -149,14 +164,29 @@ export function AppShell({
             </div>
           </div>
 
-          <Button type="button" variant="secondary" className="h-10" onClick={signOut}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="hidden h-10 sm:inline-flex"
+            onClick={signOut}
+          >
             <LogOut className="size-4" />
             Выйти
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 sm:hidden"
+            onClick={signOut}
+            aria-label="Выйти"
+          >
+            <LogOut className="size-4" />
           </Button>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-4 md:grid-cols-[240px_1fr]">
+      <div className="mx-auto grid max-w-6xl gap-4 px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:grid-cols-[240px_1fr]">
         <aside className="hidden rounded-xl border bg-card p-3 md:block">
           <NavLinks nav={nav} pathname={pathname} />
         </aside>
@@ -168,7 +198,7 @@ export function AppShell({
           <DrawerHeader>
             <DrawerTitle>Меню</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
             <NavLinks
               nav={nav}
               pathname={pathname}
