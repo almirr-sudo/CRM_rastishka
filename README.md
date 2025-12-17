@@ -1,7 +1,7 @@
-# RAS CRM — дневник развития (MVP)
-Веб‑приложение для детского сада/центра, работающего с детьми с РАС/АСД: быстрый ввод данных педагогами и понятные отчёты для родителей.
+# RAS CRM — журнал развития и CRM (MVP)
+Веб‑приложение для детского сада/центра, работающего с детьми с РАС (ASD): быстрый ввод событий педагогом/терапевтом и наглядные отчёты для родителей.
 
-## Стек (фиксированный)
+## Стек (строго)
 - Next.js (App Router) + TypeScript
 - Tailwind CSS + shadcn/ui + Lucide
 - Supabase (PostgreSQL + Auth)
@@ -9,37 +9,54 @@
 - React Hook Form + Zod
 - Recharts
 
-## Запуск
-1. Создайте `.env.local` по примеру `.env.example` и заполните:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (только для админ‑API приглашений; не публиковать)
-2. Запуск dev‑сервера: `npm run dev`
-3. Откройте `http://localhost:3000`
+## Быстрый старт
+1. Установить зависимости: `npm install`
+2. Настроить переменные окружения:
+   - Скопировать `.env.example` → `.env.local`
+   - Заполнить значения (см. раздел “Настройка Supabase”)
+3. Запустить dev‑сервер: `npm run dev`
+4. Открыть `http://localhost:3000`
 
-## Supabase (БД + RLS)
-Миграции:
-- `supabase/migrations/20251217120000_init.sql` — ядро схемы + RLS/RBAC
-- `supabase/migrations/20251217123000_timeline_events.sql` — лента событий дня (`timeline_events`)
+> На Windows Turbopack иногда показывает “Invalid source map…”. По умолчанию `npm run dev` запускает dev‑сервер в режиме webpack. Если нужен Turbopack: `npm run dev:turbo`.
 
-Таблицы (ядро):
-- `profiles`, `children`, `therapist_children`
-- `daily_logs`, `behavior_incidents`
-- `skill_goals`, `skill_tracking`
-- `timeline_events`
+## Настройка Supabase
+### 1) Где взять `NEXT_PUBLIC_SUPABASE_URL` и `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+1. Создайте проект в Supabase.
+2. Откройте **Settings → API**.
+3. Скопируйте:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - (для админ‑инвайтов) **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (только сервер, не публиковать!)
 
-## Роли и доступ (RBAC)
-- `admin`: управление пользователями/детьми/назначениями
-- `therapist`: быстрый ввод логов, инциденты ABC, цели/навыки
-- `parent`: только просмотр данных своего ребёнка (портал родителя)
+Заполните эти значения в `.env.local` и перезапустите `npm run dev`.
 
-## Маршруты (MVP)
-- `/auth/login` — вход (если Supabase не настроен, доступен демо‑вход по ролям)
-- `/app` — редирект по роли
-- Админка: `/app/admin`, `/app/admin/users`, `/app/admin/children`, `/app/admin/assignments`
-- Терапевт: `/app/therapist`, `/app/therapist/incidents`, `/app/therapist/incidents/[id]`, `/app/therapist/abc-analysis`, `/app/therapist/goals`, `/app/therapist/goals/[id]`
-- Родитель: `/app/parent`
+### 2) Применить миграции БД (SQL)
+Миграции лежат в `supabase/migrations/`:
+- `supabase/migrations/20251217120000_init.sql`
+- `supabase/migrations/20251217123000_timeline_events.sql`
+- `supabase/migrations/20251217130000_home_notes.sql`
+- `supabase/migrations/20251217130500_profiles_related_select.sql`
 
-## Примечания
-- В демо‑режиме данные показываются примерные, без синхронизации с БД.
-- “Быстрый ввод” записывает события для ленты дня в `timeline_events` (питание/настроение/сон) и инциденты в `behavior_incidents`.
+**Вариант A (проще):** Supabase Dashboard → **SQL Editor** → выполните миграции по порядку.
+
+**Вариант B (CLI):** установите Supabase CLI и примените миграции через него (удобно для командной разработки).
+
+### 3) Первый администратор
+По умолчанию у новых пользователей роль `parent`. Чтобы создать первого `admin`, после регистрации выполните в SQL Editor:
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'ВАШ_EMAIL';
+```
+
+## Роли и разделы (MVP)
+- `admin`: управление пользователями, детьми и назначениями
+- `therapist`: быстрый ввод событий (еда/настроение/сон), инциденты ABC, цели/трекинг
+- `parent`: просмотр таймлайна и графиков, домашние заметки
+
+## Скрипты
+- `npm run dev` — dev‑режим (webpack)
+- `npm run dev:turbo` — dev‑режим (Turbopack)
+- `npm run build` — сборка
+- `npm run start` — запуск production‑сборки
+- `npm run lint` — линтер

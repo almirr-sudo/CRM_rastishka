@@ -74,10 +74,24 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 )
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
-  const id = React.useId()
+  const fieldContext = React.useContext(FormFieldContext)
+
+  const name =
+    typeof fieldContext?.name === "string" && fieldContext.name.length > 0
+      ? fieldContext.name
+      : null
+
+  const stableIdBase = name
+    ? `field-${name}`
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-zA-Z0-9_-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+    : "field-unknown"
 
   return (
-    <FormItemContext.Provider value={{ id }}>
+    <FormItemContext.Provider value={{ id: stableIdBase }}>
       <div
         data-slot="form-item"
         className={cn("grid gap-2", className)}

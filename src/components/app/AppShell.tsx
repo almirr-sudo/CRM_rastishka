@@ -82,6 +82,7 @@ function buildNav(role: UserRole): NavItem[] {
 
   return [
     { href: "/app/therapist", label: "Быстрый ввод" },
+    { href: "/app/therapist/notes", label: "Домашние заметки" },
     { href: "/app/therapist/incidents", label: "Инциденты (ABC)" },
     { href: "/app/therapist/abc-analysis", label: "ABC анализ" },
     { href: "/app/therapist/goals", label: "Цели и навыки" },

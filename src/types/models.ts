@@ -105,3 +105,12 @@ export interface TimelineEvent {
   created_by: string | null;
   created_at: string;
 }
+
+export interface HomeNote {
+  id: string;
+  child_id: string;
+  author_id: string | null;
+  message: string;
+  created_at: string;
+  updated_at: string;
+}

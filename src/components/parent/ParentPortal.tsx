@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { HomeNotesThread } from "@/components/notes/HomeNotesThread";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type {
@@ -552,6 +553,18 @@ export function ParentPortal() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          {selectedChild ? (
+            <HomeNotesThread childId={selectedChild.id} myRole="parent" />
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Выберите ребёнка, чтобы открыть домашние заметки.
             </div>
           )}
         </CardContent>
