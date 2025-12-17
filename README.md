@@ -13,15 +13,33 @@
 1. Создайте `.env.local` по примеру `.env.example` и заполните:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (только для админ‑API приглашений; не публиковать)
 2. Запуск dev‑сервера: `npm run dev`
 3. Откройте `http://localhost:3000`
 
-Если Supabase не настроен, приложение запускается в демо‑режиме (UI работает, данные не сохраняются в БД).
+## Supabase (БД + RLS)
+Миграции:
+- `supabase/migrations/20251217120000_init.sql` — ядро схемы + RLS/RBAC
+- `supabase/migrations/20251217123000_timeline_events.sql` — лента событий дня (`timeline_events`)
 
-## База данных (Supabase)
-- Миграция схемы: `supabase/migrations/20251217120000_init.sql`
-- Таблицы (ядро): `profiles`, `children`, `daily_logs`, `behavior_incidents`, `skill_goals`, `skill_tracking`, `therapist_children`
-- Включены RLS‑политики для ролей `admin` / `therapist` / `parent`
+Таблицы (ядро):
+- `profiles`, `children`, `therapist_children`
+- `daily_logs`, `behavior_incidents`
+- `skill_goals`, `skill_tracking`
+- `timeline_events`
 
-## Текущее состояние MVP
-- Стартовая страница `/`: «Быстрый ввод» (панель терапевта) — сетка детей + быстрый лог в drawer
+## Роли и доступ (RBAC)
+- `admin`: управление пользователями/детьми/назначениями
+- `therapist`: быстрый ввод логов, инциденты ABC, цели/навыки
+- `parent`: только просмотр данных своего ребёнка (портал родителя)
+
+## Маршруты (MVP)
+- `/auth/login` — вход (если Supabase не настроен, доступен демо‑вход по ролям)
+- `/app` — редирект по роли
+- Админка: `/app/admin`, `/app/admin/users`, `/app/admin/children`, `/app/admin/assignments`
+- Терапевт: `/app/therapist`, `/app/therapist/incidents`, `/app/therapist/incidents/[id]`, `/app/therapist/abc-analysis`, `/app/therapist/goals`, `/app/therapist/goals/[id]`
+- Родитель: `/app/parent`
+
+## Примечания
+- В демо‑режиме данные показываются примерные, без синхронизации с БД.
+- “Быстрый ввод” записывает события для ленты дня в `timeline_events` (питание/настроение/сон) и инциденты в `behavior_incidents`.

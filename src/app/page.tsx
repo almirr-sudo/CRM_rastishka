@@ -1,5 +1,5 @@
-import { TherapistDashboard } from "@/components/therapist/TherapistDashboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <TherapistDashboard />;
+  redirect("/app");
 }

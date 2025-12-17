@@ -15,7 +15,13 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import type { BehaviorIncident, Child, DailyLog, FoodIntake } from "@/types/models";
+import type {
+  BehaviorIncident,
+  Child,
+  DailyLog,
+  FoodIntake,
+  TimelineEventType,
+} from "@/types/models";
 
 type UpsertDailyLogInput = {
   childId: string;
@@ -147,6 +153,22 @@ async function createBehaviorIncident(childId: string): Promise<BehaviorIncident
   return data as BehaviorIncident;
 }
 
+async function createTimelineEvent(childId: string, type: TimelineEventType, payload: Record<string, unknown> = {}) {
+  if (!supabase) return;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return;
+
+  const { error } = await supabase.from("timeline_events").insert({
+    child_id: childId,
+    type,
+    payload,
+    created_by: sessionData.session.user.id,
+  });
+
+  if (error) throw error;
+}
+
 type MoodOption = { score: 1 | 2 | 3 | 4 | 5; emoji: string; label: string };
 
 const moodOptions: MoodOption[] = [
@@ -240,6 +262,18 @@ export function QuickLogDrawer({
     onError: () => setLastAction("Не удалось зафиксировать инцидент"),
   });
 
+  const timelineEventMutation = useMutation({
+    mutationFn: async ({
+      childId: childIdArg,
+      type,
+      payload,
+    }: {
+      childId: string;
+      type: TimelineEventType;
+      payload?: Record<string, unknown>;
+    }) => createTimelineEvent(childIdArg, type, payload),
+  });
+
   const canInteract = Boolean(childId);
 
   const moodValue = dailyLog?.mood_score ?? null;
@@ -297,6 +331,11 @@ export function QuickLogDrawer({
                           date,
                           patch: { food_intake: opt.value },
                         });
+                        timelineEventMutation.mutate({
+                          childId,
+                          type: "food",
+                          payload: { food_intake: opt.value },
+                        });
                       }}
                     >
                       {opt.icon === "refusal" ? (
@@ -338,6 +377,11 @@ export function QuickLogDrawer({
                           date,
                           patch: { mood_score: m.score },
                         });
+                        timelineEventMutation.mutate({
+                          childId,
+                          type: "mood",
+                          payload: { mood_score: m.score },
+                        });
                       }}
                     >
                       {m.emoji}
@@ -374,6 +418,10 @@ export function QuickLogDrawer({
                     const nowIso = new Date().toISOString();
                     setNapStartedAt(nowIso);
                     setLastAction("Сон начался");
+                    timelineEventMutation.mutate({
+                      childId,
+                      type: "nap_start",
+                    });
                   }}
                 >
                   <Moon className="size-5" />
@@ -400,6 +448,12 @@ export function QuickLogDrawer({
                       childId,
                       date,
                       patch: { sleep_duration: next },
+                    });
+
+                    timelineEventMutation.mutate({
+                      childId,
+                      type: "nap_end",
+                      payload: { minutes },
                     });
                   }}
                 >

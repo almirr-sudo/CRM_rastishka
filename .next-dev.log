@@ -7,10 +7,9 @@
    - Network:       http://172.26.160.1:3000
 
  ✓ Starting...
- ✓ Ready in 756ms
+ ✓ Ready in 1877ms
  ○ Compiling / ...
- GET / 200 in 2.2s (compile: 1961ms, render: 268ms)
- GET / 200 in 37ms (compile: 3ms, render: 34ms)
- GET / 200 in 89ms (compile: 8ms, render: 81ms)
- GET / 200 in 74ms (compile: 4ms, render: 70ms)
- GET / 200 in 63ms (compile: 3ms, render: 60ms)
+ GET / 307 in 975ms (compile: 749ms, render: 227ms)
+ GET / 307 in 61ms (compile: 7ms, render: 55ms)
+ GET /app 307 in 106ms (compile: 5ms, render: 101ms)
+ GET /auth/login 200 in 1778ms (compile: 1496ms, render: 283ms)

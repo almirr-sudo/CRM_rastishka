@@ -6,6 +6,14 @@ export type GoalStatus = "in_progress" | "mastered";
 
 export type PromptLevel = "independent" | "verbal" | "gestural" | "physical";
 
+export type TimelineEventType =
+  | "food"
+  | "mood"
+  | "nap_start"
+  | "nap_end"
+  | "note"
+  | "custom";
+
 export type Json =
   | string
   | number
@@ -88,3 +96,12 @@ export interface SkillTracking {
   created_at: string;
 }
 
+export interface TimelineEvent {
+  id: string;
+  child_id: string;
+  timestamp: string;
+  type: TimelineEventType;
+  payload: Json;
+  created_by: string | null;
+  created_at: string;
+}
