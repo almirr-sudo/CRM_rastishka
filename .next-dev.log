@@ -1,0 +1,16 @@
+
+> ras-crm@0.1.0 dev
+> next dev --port 3000
+
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://172.26.160.1:3000
+
+ ✓ Starting...
+ ✓ Ready in 756ms
+ ○ Compiling / ...
+ GET / 200 in 2.2s (compile: 1961ms, render: 268ms)
+ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+ GET / 200 in 89ms (compile: 8ms, render: 81ms)
+ GET / 200 in 74ms (compile: 4ms, render: 70ms)
+ GET / 200 in 63ms (compile: 3ms, render: 60ms)
