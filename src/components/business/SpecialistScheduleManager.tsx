@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, UsersRound } from "lucide-react";
 
@@ -84,6 +84,7 @@ async function fetchHours(specialistId: string): Promise<SpecialistWorkingHours[
 
 export function SpecialistScheduleManager() {
   const queryClient = useQueryClient();
+  const lastLoadedSpecialistIdRef = useRef<string>("");
 
   const therapistsQuery = useQuery({
     queryKey: ["business", "therapists"],
@@ -100,26 +101,30 @@ export function SpecialistScheduleManager() {
     queryKey: ["business", "specialistHours", effectiveId],
     queryFn: () => fetchHours(effectiveId),
     enabled: Boolean(supabase) && Boolean(effectiveId),
+    refetchOnWindowFocus: false,
+    onSuccess: (rows) => {
+      if (!effectiveId) return;
+      if (lastLoadedSpecialistIdRef.current === effectiveId) return;
+
+      const next = buildDefaultDraft();
+      rows.forEach((row) => {
+        next[row.weekday] = {
+          enabled: true,
+          start: hhmm(row.start_time),
+          end: hhmm(row.end_time),
+        };
+      });
+
+      setDraft(next);
+      setErrorText(null);
+      setSavedHint(null);
+      lastLoadedSpecialistIdRef.current = effectiveId;
+    },
   });
 
   const [draft, setDraft] = useState<Record<number, DayDraft>>(() => buildDefaultDraft());
   const [errorText, setErrorText] = useState<string | null>(null);
   const [savedHint, setSavedHint] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!hoursQuery.data) return;
-    const next = buildDefaultDraft();
-    hoursQuery.data.forEach((row) => {
-      next[row.weekday] = {
-        enabled: true,
-        start: hhmm(row.start_time),
-        end: hhmm(row.end_time),
-      };
-    });
-    setDraft(next);
-    setErrorText(null);
-    setSavedHint(null);
-  }, [hoursQuery.data]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -196,7 +201,17 @@ export function SpecialistScheduleManager() {
               <UsersRound className="size-4 text-muted-foreground" />
               Специалист
             </div>
-            <Select value={effectiveId} onValueChange={setSelectedId} disabled={!supabase || therapists.length <= 1}>
+            <Select
+              value={effectiveId}
+              onValueChange={(v) => {
+                setSelectedId(v);
+                setDraft(buildDefaultDraft());
+                setErrorText(null);
+                setSavedHint(null);
+                lastLoadedSpecialistIdRef.current = "";
+              }}
+              disabled={!supabase || therapists.length <= 1}
+            >
               <SelectTrigger className="h-11">
                 <SelectValue placeholder={therapistsQuery.isLoading ? "Загрузка…" : "Выберите специалиста"} />
               </SelectTrigger>
@@ -297,4 +312,3 @@ export function SpecialistScheduleManager() {
     </div>
   );
 }
-

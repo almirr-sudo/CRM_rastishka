@@ -186,7 +186,8 @@ const paymentSchema = z.object({
   description: z.string().max(2000).optional().or(z.literal("")),
 });
 
-type PaymentValues = z.infer<typeof paymentSchema>;
+type PaymentFormValues = z.input<typeof paymentSchema>;
+type PaymentValues = z.output<typeof paymentSchema>;
 
 function firstDayIso(daysBack: number) {
   const d = new Date();
@@ -262,7 +263,7 @@ export function FinanceManager() {
       .slice(0, 10);
   }, [incomeQuery.data, incomeView]);
 
-  const paymentForm = useForm<PaymentValues>({
+  const paymentForm = useForm<PaymentFormValues, unknown, PaymentValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       amount: 0,
@@ -582,7 +583,24 @@ export function FinanceManager() {
                       <FormItem>
                         <FormLabel>Сумма</FormLabel>
                         <FormControl>
-                          <Input className="h-11" type="number" inputMode="decimal" min={0} step={50} {...field} />
+                          <Input
+                            className="h-11"
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            step={50}
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={
+                              typeof field.value === "number"
+                                ? field.value
+                                : Number.isFinite(Number(field.value))
+                                  ? Number(field.value)
+                                  : 0
+                            }
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

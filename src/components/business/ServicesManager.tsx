@@ -43,7 +43,8 @@ const serviceSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, "Цвет должен быть в формате #RRGGBB"),
 });
 
-type ServiceValues = z.infer<typeof serviceSchema>;
+type ServiceFormValues = z.input<typeof serviceSchema>;
+type ServiceValues = z.output<typeof serviceSchema>;
 
 async function fetchServices(): Promise<Service[]> {
   if (!supabase) return [];
@@ -95,7 +96,7 @@ export function ServicesManager() {
 
   const services = servicesQuery.data ?? [];
 
-  const form = useForm<ServiceValues>({
+  const form = useForm<ServiceFormValues, unknown, ServiceValues>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       name: "",
@@ -311,7 +312,24 @@ export function ServicesManager() {
                       <FormItem>
                         <FormLabel>Длительность (мин)</FormLabel>
                         <FormControl>
-                          <Input className="h-11" type="number" inputMode="numeric" min={5} step={5} {...field} />
+                          <Input
+                            className="h-11"
+                            type="number"
+                            inputMode="numeric"
+                            min={5}
+                            step={5}
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={
+                              typeof field.value === "number"
+                                ? field.value
+                                : Number.isFinite(Number(field.value))
+                                  ? Number(field.value)
+                                  : 0
+                            }
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -325,7 +343,24 @@ export function ServicesManager() {
                       <FormItem>
                         <FormLabel>Цена</FormLabel>
                         <FormControl>
-                          <Input className="h-11" type="number" inputMode="decimal" min={0} step={50} {...field} />
+                          <Input
+                            className="h-11"
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            step={50}
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={
+                              typeof field.value === "number"
+                                ? field.value
+                                : Number.isFinite(Number(field.value))
+                                  ? Number(field.value)
+                                  : 0
+                            }
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -383,4 +418,3 @@ export function ServicesManager() {
     </div>
   );
 }
-

@@ -7,8 +7,8 @@ import type {
   DatesSetArg,
   EventClickArg,
   EventDropArg,
-  EventResizeDoneArg,
 } from "@fullcalendar/core";
+import type { EventResizeDoneArg } from "@fullcalendar/interaction";
 import ruLocale from "@fullcalendar/core/locales/ru";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -220,7 +220,8 @@ const appointmentSchema = z
     }
   });
 
-type AppointmentValues = z.infer<typeof appointmentSchema>;
+type AppointmentFormValues = z.input<typeof appointmentSchema>;
+type AppointmentValues = z.output<typeof appointmentSchema>;
 
 function appointmentStatusLabel(v: AppointmentStatus) {
   return statusOptions.find((o) => o.value === v)?.label ?? v;
@@ -333,7 +334,7 @@ export function BusinessCalendar() {
   const canRender = Boolean(supabase);
   const hasPrerequisites = children.length > 0 && therapists.length > 0 && services.length > 0;
 
-  const form = useForm<AppointmentValues>({
+  const form = useForm<AppointmentFormValues, unknown, AppointmentValues>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       child_id: "",
@@ -1030,7 +1031,24 @@ export function BusinessCalendar() {
                       <FormItem>
                         <FormLabel>Длительность (мин)</FormLabel>
                         <FormControl>
-                          <Input className="h-11" type="number" inputMode="numeric" min={5} step={5} {...field} />
+                          <Input
+                            className="h-11"
+                            type="number"
+                            inputMode="numeric"
+                            min={5}
+                            step={5}
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={
+                              typeof field.value === "number"
+                                ? field.value
+                                : Number.isFinite(Number(field.value))
+                                  ? Number(field.value)
+                                  : 0
+                            }
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1066,7 +1084,8 @@ export function BusinessCalendar() {
                               <FormLabel>Дни недели</FormLabel>
                               <div className="flex flex-wrap gap-2">
                                 {weekdayOptions.map((d) => {
-                                  const checked = field.value.includes(d.value);
+                                  const current = field.value ?? [];
+                                  const checked = current.includes(d.value);
                                   return (
                                     <Button
                                       key={d.value}
@@ -1075,8 +1094,8 @@ export function BusinessCalendar() {
                                       className="h-10 px-3"
                                       onClick={() => {
                                         const next = checked
-                                          ? field.value.filter((v) => v !== d.value)
-                                          : [...field.value, d.value];
+                                          ? current.filter((v) => v !== d.value)
+                                          : [...current, d.value];
                                         field.onChange(next);
                                       }}
                                     >

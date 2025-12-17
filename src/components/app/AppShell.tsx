@@ -1,22 +1,22 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Briefcase, LogOut, Menu, Shield, Stethoscope, Users } from "lucide-react";
+import { Briefcase, LogOut, Menu, Shield, Stethoscope, Users } from "lucide-react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-} from "@/components/ui/drawer";
-import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
-import type { Profile, UserRole } from "@/types/models";
-import { DEMO_NAME_COOKIE, DEMO_ROLE_COOKIE } from "@/lib/auth/demo";
+} from "@/components/ui/drawer"
+import { Separator } from "@/components/ui/separator"
+import { DEMO_NAME_COOKIE, DEMO_ROLE_COOKIE } from "@/lib/auth/demo"
+import { supabase } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
+import type { Profile, UserRole } from "@/types/models"
 
 type NavItem = { href: string; label: string };
 
@@ -154,7 +154,8 @@ export function AppShell({
               <Menu />
             </Button>
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">RAS CRM</div>
+              <div className="truncate text-sm font-semibold">RASTISHKA CRM
+              </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {roleIcon(profile.role)}
                 <span className="truncate">

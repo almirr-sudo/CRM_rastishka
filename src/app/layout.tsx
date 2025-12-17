@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
 
-import { Providers } from "./providers";
+import { Providers } from "./providers"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RAS CRM — Дневник развития",
+  title: "RASTISHKA CRM — Дневник развития",
   description: "CRM и дневник развития для детского сада (РАС/АСД)",
 };
 
