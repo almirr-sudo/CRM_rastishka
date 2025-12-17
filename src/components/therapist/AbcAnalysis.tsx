@@ -251,12 +251,15 @@ export function AbcAnalysis() {
           <div className="grid gap-3 md:grid-cols-3">
             <div className="grid gap-1">
               <div className="text-xs font-medium text-muted-foreground">Ребёнок</div>
-              <Select value={childId} onValueChange={setChildId}>
+              <Select
+                value={childId ? childId : "all"}
+                onValueChange={(v) => setChildId(v === "all" ? "" : v)}
+              >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Все дети" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все дети</SelectItem>
+                  <SelectItem value="all">Все дети</SelectItem>
                   {children.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}

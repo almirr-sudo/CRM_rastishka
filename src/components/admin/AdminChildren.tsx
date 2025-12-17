@@ -50,6 +50,8 @@ type ChildValues = z.infer<typeof childSchema>;
 
 type ChildRow = Child & { parent?: Pick<Profile, "full_name" | "email"> | null };
 
+const NO_PARENT_VALUE = "__none__";
+
 async function fetchParents(): Promise<Pick<Profile, "id" | "full_name" | "email">[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
@@ -220,14 +222,17 @@ export function AdminChildren() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Родитель (опционально)</FormLabel>
-                      <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value ? field.value : NO_PARENT_VALUE}
+                        onValueChange={(v) => field.onChange(v === NO_PARENT_VALUE ? "" : v)}
+                      >
                         <FormControl>
                           <SelectTrigger className="h-11">
                             <SelectValue placeholder="Не выбран" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Не выбран</SelectItem>
+                          <SelectItem value={NO_PARENT_VALUE}>Не выбран</SelectItem>
                           {parents.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {(p.full_name || "Без имени") + " · " + p.email}
@@ -296,11 +301,11 @@ export function AdminChildren() {
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={c.parent_id ?? ""}
+                          value={c.parent_id ?? NO_PARENT_VALUE}
                           onValueChange={(v) =>
                             updateParentMutation.mutate({
                               childId: c.id,
-                              parentId: v ? v : null,
+                              parentId: v === NO_PARENT_VALUE ? null : v,
                             })
                           }
                           disabled={!supabase || updateParentMutation.isPending}
@@ -309,7 +314,7 @@ export function AdminChildren() {
                             <SelectValue placeholder="Не выбран" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Не выбран</SelectItem>
+                            <SelectItem value={NO_PARENT_VALUE}>Не выбран</SelectItem>
                             {parents.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
                                 {(p.full_name || "Без имени") + " · " + p.email}
@@ -329,4 +334,3 @@ export function AdminChildren() {
     </div>
   );
 }
-
